@@ -15,7 +15,6 @@ import com.chunkytofustudios.native_geofence.generated.GeofenceCallbackParamsWir
 import com.chunkytofustudios.native_geofence.model.GeofenceCallbackParamsStorage
 import com.chunkytofustudios.native_geofence.util.ActiveGeofenceWires
 import com.chunkytofustudios.native_geofence.util.GeofenceEvents
-import com.chunkytofustudios.native_geofence.util.LocationWires
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -84,15 +83,12 @@ class NativeGeofenceBroadcastReceiver : BroadcastReceiver() {
             return null
         }
 
-        val location = geofencingEvent.triggeringLocation
-        if (location == null) {
-            Log.w(TAG, "No triggering location found.")
-        }
-
+        // Marketdey fork: the triggering location is never read, so it cannot reach
+        // WorkManager's on-disk input Data.
         return GeofenceCallbackParamsWire(
             triggeringGeofences,
             geofenceEvent,
-            location?.let { LocationWires.fromLocation(it) },
+            null,
             callbackHandle
         )
     }

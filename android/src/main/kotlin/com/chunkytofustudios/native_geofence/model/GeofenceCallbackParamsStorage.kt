@@ -8,7 +8,6 @@ import kotlinx.serialization.Serializable
 class GeofenceCallbackParamsStorage(
     private val geofences: List<ActiveGeofenceStorage>,
     private val event: GeofenceEvent,
-    private val location: LocationStorage? = null,
     private val callbackHandle: Long
 ) {
     companion object {
@@ -16,7 +15,6 @@ class GeofenceCallbackParamsStorage(
             return GeofenceCallbackParamsStorage(
                 e.geofences.map { ActiveGeofenceStorage.fromWire(it) }.toList(),
                 e.event,
-                e.location?.let { LocationStorage.fromWire(it) },
                 e.callbackHandle,
             )
         }
@@ -26,7 +24,7 @@ class GeofenceCallbackParamsStorage(
         return GeofenceCallbackParamsWire(
             geofences.map { it.toWire() }.toList(),
             event,
-            location?.toWire(),
+            null,
             callbackHandle,
         )
     }

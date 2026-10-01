@@ -1,3 +1,7 @@
+## 1.3.1-marketdey.1 (fork)
+
+* Android: the triggering device location is no longer read or written to WorkManager's input `Data`; `GeofenceCallbackParams.location` is always `null`.
+
 ## 1.3.1
 
 * Improves AGP 9 support (by [doug-shontz](https://github.com/doug-shontz))

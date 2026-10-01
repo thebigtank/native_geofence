@@ -1,5 +1,7 @@
 # Native Geofence
 
+> **Marketdey fork:** on Android the device's position is never persisted (see CHANGELOG); `GeofenceCallbackParams.location` is always `null`.
+
 Battery efficient Flutter geofencing plugin that uses native iOS and Android APIs.
 
 <dl>
