@@ -1,6 +1,7 @@
 ## 1.3.1-marketdey.1 (fork)
 
 * Android: the triggering device location is no longer read or written to WorkManager's input `Data`; `GeofenceCallbackParams.location` is always `null`.
+* Android: drops the unused `play-services-maps` dependency.
 
 ## 1.3.1
 
