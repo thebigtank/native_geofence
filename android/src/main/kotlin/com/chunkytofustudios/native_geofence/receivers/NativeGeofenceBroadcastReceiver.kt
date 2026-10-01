@@ -11,9 +11,7 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import com.chunkytofustudios.native_geofence.Constants
 import com.chunkytofustudios.native_geofence.NativeGeofenceBackgroundWorker
-import com.chunkytofustudios.native_geofence.generated.GeofenceCallbackParamsWire
 import com.chunkytofustudios.native_geofence.model.GeofenceCallbackParamsStorage
-import com.chunkytofustudios.native_geofence.util.ActiveGeofenceWires
 import com.chunkytofustudios.native_geofence.util.GeofenceEvents
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.serialization.encodeToString
@@ -29,8 +27,7 @@ class NativeGeofenceBroadcastReceiver : BroadcastReceiver() {
 
         val geofenceCallbackParams = getGeofenceCallbackParams(intent) ?: return
 
-        val jsonData =
-            Json.encodeToString(GeofenceCallbackParamsStorage.fromWire(geofenceCallbackParams))
+        val jsonData = Json.encodeToString(geofenceCallbackParams)
         val workRequest = OneTimeWorkRequestBuilder<NativeGeofenceBackgroundWorker>()
             .setInputData(Data.Builder().putString(Constants.WORKER_PAYLOAD_KEY, jsonData).build())
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
@@ -46,7 +43,7 @@ class NativeGeofenceBroadcastReceiver : BroadcastReceiver() {
         work.enqueue()
     }
 
-    private fun getGeofenceCallbackParams(intent: Intent): GeofenceCallbackParamsWire? {
+    private fun getGeofenceCallbackParams(intent: Intent): GeofenceCallbackParamsStorage? {
         val callbackHandle = intent.getLongExtra(Constants.CALLBACK_HANDLE_KEY, 0)
         if (callbackHandle == 0L) {
             Log.e(TAG, "GeofencingEvent callback handle is missing.")
@@ -75,21 +72,14 @@ class NativeGeofenceBroadcastReceiver : BroadcastReceiver() {
 
         // Get the geofences that were triggered. A single event can trigger
         // multiple geofences.
-        val triggeringGeofences = geofencingEvent.triggeringGeofences?.map {
-            ActiveGeofenceWires.fromGeofence(it)
-        }
-        if (triggeringGeofences.isNullOrEmpty()) {
+        val triggeringIds = geofencingEvent.triggeringGeofences?.map { it.requestId }
+        if (triggeringIds.isNullOrEmpty()) {
             Log.e(TAG, "No triggering geofences found.")
             return null
         }
 
-        // Marketdey fork: the triggering location is never read, so it cannot reach
-        // WorkManager's on-disk input Data.
-        return GeofenceCallbackParamsWire(
-            triggeringGeofences,
-            geofenceEvent,
-            null,
-            callbackHandle
-        )
+        // Marketdey fork: only ids reach WorkManager's on-disk input Data — never the
+        // triggering location, nor the fences' centres; the worker looks those up.
+        return GeofenceCallbackParamsStorage(triggeringIds, geofenceEvent, callbackHandle)
     }
 }

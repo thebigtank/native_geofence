@@ -1,3 +1,7 @@
+## 1.3.1-marketdey.2 (fork)
+
+* Android: WorkManager's input `Data` holds only the triggering geofence ids, the event and the callback handle; the worker rebuilds each `ActiveGeofence` from the plugin's registration cache (an id no longer registered arrives with a zero location and radius).
+
 ## 1.3.1-marketdey.1 (fork)
 
 * Android: the triggering device location is no longer read or written to WorkManager's input `Data`; `GeofenceCallbackParams.location` is always `null`.

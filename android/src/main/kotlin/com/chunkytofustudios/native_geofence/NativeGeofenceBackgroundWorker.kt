@@ -10,10 +10,14 @@ import androidx.work.ForegroundInfo
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.chunkytofustudios.native_geofence.api.NativeGeofenceBackgroundApiImpl
+import com.chunkytofustudios.native_geofence.generated.ActiveGeofenceWire
 import com.chunkytofustudios.native_geofence.generated.GeofenceCallbackParamsWire
+import com.chunkytofustudios.native_geofence.generated.LocationWire
 import com.chunkytofustudios.native_geofence.generated.NativeGeofenceBackgroundApi
 import com.chunkytofustudios.native_geofence.generated.NativeGeofenceTriggerApi
 import com.chunkytofustudios.native_geofence.model.GeofenceCallbackParamsStorage
+import com.chunkytofustudios.native_geofence.util.ActiveGeofenceWires
+import com.chunkytofustudios.native_geofence.util.NativeGeofencePersistence
 import com.chunkytofustudios.native_geofence.util.Notifications
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -163,14 +167,21 @@ class NativeGeofenceBackgroundWorker(
             return null
         }
 
-        try {
-            return Json.decodeFromString<GeofenceCallbackParamsStorage>(jsonData).toWire()
+        val stored = try {
+            Json.decodeFromString<GeofenceCallbackParamsStorage>(jsonData)
         } catch (e: Exception) {
-            Log.e(
-                TAG,
-                "Failed to parse worker payload. Data=${jsonData}"
-            )
+            Log.e(TAG, "Failed to parse worker payload.")
             return null
         }
+
+        // Marketdey fork: the payload holds ids only; centre and radius come from the plugin's
+        // own registration cache, and a fence no longer registered keeps its id with a zero
+        // location so the Dart callback still decides what the event means.
+        val registered = NativeGeofencePersistence.getAllGeofences(context).associateBy { it.id }
+        val geofences = stored.geofenceIds.map { id ->
+            registered[id]?.let { ActiveGeofenceWires.fromGeofenceWire(it) }
+                ?: ActiveGeofenceWire(id, LocationWire(0.0, 0.0), 0.0, listOf(stored.event), null)
+        }
+        return GeofenceCallbackParamsWire(geofences, stored.event, null, stored.callbackHandle)
     }
 }
